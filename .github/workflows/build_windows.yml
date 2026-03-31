@@ -6,8 +6,13 @@ on:
   workflow_dispatch:
 
 jobs:
+
+  # ══════════════════════════════════════════════════════════════
+  #  Windows: بناء EXE + Installer كامل مع كل الصلاحيات
+  # ══════════════════════════════════════════════════════════════
   build-windows:
     runs-on: windows-latest
+
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -16,6 +21,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
 
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
@@ -23,24 +29,72 @@ jobs:
       - name: Install Packages
         run: flutter pub get
 
+      - name: Generate Code (build_runner)
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+        continue-on-error: true
+
       - name: Build Windows Release
         run: flutter build windows --release
 
-      - name: Create README with instructions
+      - name: Add README (VC++ hint)
         run: |
-          echo "لتشغيل هذا التطبيق، قد تحتاج إلى تثبيت Microsoft Visual C++ Redistributable" > build/windows/x64/runner/Release/README.txt
-          echo "" >> build/windows/x64/runner/Release/README.txt
-          echo "قم بتنزيله من:" >> build/windows/x64/runner/Release/README.txt
-          echo "https://aka.ms/vs/17/release/vc_redist.x64.exe" >> build/windows/x64/runner/Release/README.txt
+          @"
+          نظام إدارة الصالة الرياضية - GymSystem v1.0.0
+          ================================================
+          لتشغيل هذا التطبيق قد تحتاج Microsoft Visual C++ Redistributable
+          سيتم تثبيته تلقائياً عند استخدام ملف الـ Installer (GymSystem_Setup_v1.0.0.exe)
 
-      - name: Upload Windows EXE
+          رابط التحميل اليدوي إذا احتجت:
+          https://aka.ms/vs/17/release/vc_redist.x64.exe
+          "@ | Out-File -FilePath "build\windows\x64\runner\Release\README.txt" -Encoding UTF8
+
+      # ──────────────────────────────────────────────────────────
+      # تحميل VC++ Redistributable وضعه جانب ملف الـ installer
+      # ──────────────────────────────────────────────────────────
+      - name: Download VC++ Redistributable
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" `
+            -OutFile "windows\installer\VC_redist.x64.exe"
+        shell: powershell
+
+      # ──────────────────────────────────────────────────────────
+      # تثبيت Inno Setup وبناء الـ installer
+      # ──────────────────────────────────────────────────────────
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup --yes --no-progress
+        shell: powershell
+
+      - name: Build Installer (setup.exe)
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc "windows\installer\setup.iss"
+        shell: powershell
+
+      # ──────────────────────────────────────────────────────────
+      # رفع الناتج: الـ installer + المجلد الكامل
+      # ──────────────────────────────────────────────────────────
+      - name: Upload Windows Installer (EXE Setup)
         uses: actions/upload-artifact@v4
         with:
-          name: Windows-App
-          path: build/windows/x64/runner/Release/
+          name: Windows-Installer
+          path: windows\installer\Output\GymSystem_Setup_v*.exe
+          if-no-files-found: warn
 
+      - name: Upload Windows Portable (Folder)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Portable
+          path: build\windows\x64\runner\Release\
+
+
+  # ══════════════════════════════════════════════════════════════
+  #  Android: APK
+  # ══════════════════════════════════════════════════════════════
   build-android:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -49,6 +103,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
 
       - name: Install Packages
         run: flutter pub get
@@ -62,8 +117,13 @@ jobs:
           name: Android-App
           path: build/app/outputs/flutter-apk/app-release.apk
 
+
+  # ══════════════════════════════════════════════════════════════
+  #  Android: AAB (للـ Play Store)
+  # ══════════════════════════════════════════════════════════════
   build-android-aab:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -72,6 +132,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
 
       - name: Install Packages
         run: flutter pub get
@@ -85,8 +146,13 @@ jobs:
           name: Android-AppBundle
           path: build/app/outputs/bundle/release/app-release.aab
 
+
+  # ══════════════════════════════════════════════════════════════
+  #  iOS: IPA
+  # ══════════════════════════════════════════════════════════════
   build-ios:
     runs-on: macos-latest
+
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -95,6 +161,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
 
       - name: Install Packages
         run: flutter pub get
@@ -107,86 +174,3 @@ jobs:
         with:
           name: iOS-App
           path: build/ios/ipa/*.ipa
-
-# name: Build Windows & Android App
-
-# on:
-#   push:
-#     branches: [ "main" ]   # أي Push على main يشغل الـ workflow
-#   workflow_dispatch:        # تشغيل يدوي لو حبيت
-
-# jobs:
-#   build-windows:
-#     runs-on: windows-latest
-
-#     steps:
-#       - name: Checkout Project
-#         uses: actions/checkout@v4
-
-#       - name: Install Flutter
-#         uses: subosito/flutter-action@v2
-#         with:
-#           channel: stable
-
-#       - name: Enable Windows Desktop
-#         run: flutter config --enable-windows-desktop
-
-#       - name: Install Packages
-#         run: flutter pub get
-
-#       - name: Build Windows Release
-#         run: flutter build windows --release
-
-#       - name: Upload Windows EXE
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: Windows-App
-#           path: build/windows/x64/runner/Release/
-
-#   build-android:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout Project
-#         uses: actions/checkout@v4
-
-#       - name: Install Flutter
-#         uses: subosito/flutter-action@v2
-#         with:
-#           channel: stable
-
-#       - name: Install Packages
-#         run: flutter pub get
-
-#       - name: Build Android APK
-#         run: flutter build apk --release
-
-#       - name: Upload Android APK
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: Android-App
-#           path: build/app/outputs/flutter-apk/app-release.apk
-
-#   build-android-aab:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout Project
-#         uses: actions/checkout@v4
-
-#       - name: Install Flutter
-#         uses: subosito/flutter-action@v2
-#         with:
-#           channel: stable
-
-#       - name: Install Packages
-#         run: flutter pub get
-
-#       - name: Build Android App Bundle
-#         run: flutter build appbundle --release
-
-#       - name: Upload Android AAB
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: Android-AppBundle
-#           path: build/app/outputs/bundle/release/app-release.aab

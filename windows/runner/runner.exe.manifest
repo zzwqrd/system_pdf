@@ -5,22 +5,32 @@
       <!-- دعم كامل للشاشات عالية الدقة (4K وغيرها) -->
       <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
       <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">True/PM</dpiAware>
-      <!-- السماح بالوصول للملفات والمجلدات بدون UAC prompt -->
+      <!-- السماح بمسارات ملفات طويلة بدون قيود -->
       <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+      <!-- استخدام heap حديث لتحسين الأداء والذاكرة -->
+      <heapType xmlns="http://schemas.microsoft.com/SMI/2020/WindowsSettings">SegmentHeap</heapType>
     </windowsSettings>
   </application>
-  <!-- مستوى الصلاحيات: asInvoker = بدون Admin، autoElevate = false -->
+  <!--
+    highestAvailable = يأخذ أعلى صلاحية متاحة:
+      - لو المستخدم Admin → يشتغل بصلاحيات Admin كاملة
+      - لو مستخدم عادي → يشتغل عادي بدون مشاكل
+    هذا أفضل من requireAdministrator (يمنع المستخدمين العاديين)
+    وأفضل من asInvoker (يفوت فرصة الصلاحيات على Admin)
+  -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>
-        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
+        <requestedExecutionLevel level="highestAvailable" uiAccess="false"/>
       </requestedPrivileges>
     </security>
   </trustInfo>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
-      <!-- Windows 10 and Windows 11 -->
+      <!-- Windows 10 -->
       <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
+      <!-- Windows 11 -->
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"/>
     </application>
   </compatibility>
 </assembly>

@@ -2,6 +2,7 @@
 ;  Inno Setup Script — نظام إدارة الصالة الرياضية
 ;  الإصدار: 1.0.0
 ;  المطور: Abd Elhamed
+;  الميزات: Admin كامل + VC++ تلقائي + تثبيت سريع
 ; ================================================================
 
 #define AppName      "نظام إدارة الصالة"
@@ -11,9 +12,10 @@
 #define AppExeName   "gym_system.exe"
 #define AppBuildDir  "..\..\..\build\windows\x64\runner\Release"
 #define AppIconFile  "..\runner\resources\app_icon.ico"
+#define VCRedistFile "VC_redist.x64.exe"
 
 [Setup]
-; معلومات التطبيق الأساسية
+; ─── معلومات التطبيق ──────────────────────────────────────────
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 AppName={#AppName}
 AppVersion={#AppVersion}
@@ -22,109 +24,193 @@ AppPublisher={#AppPublisher}
 AppPublisherURL=https://github.com/abdelhamedrefat
 AppSupportURL=mailto:abdelhamedrefat@gmail.com
 
-; مجلد التثبيت الافتراضي
+; ─── مجلد التثبيت ────────────────────────────────────────────
 DefaultDirName={autopf}\{#AppNameEn}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 
-; الأيقونة
+; ─── الأيقونة ─────────────────────────────────────────────────
 SetupIconFile={#AppIconFile}
 UninstallDisplayIcon={app}\{#AppExeName}
 
-; ملف الـ Installer الناتج
+; ─── ملف الـ Installer الناتج ────────────────────────────────
 OutputDir=.\Output
 OutputBaseFilename=GymSystem_Setup_v{#AppVersion}
 
-; الضغط
+; ─── الضغط: أقصى ضغط مع سرعة فك ضغط عالية ──────────────────
 Compression=lzma2/ultra64
 SolidCompression=yes
 LZMAUseSeparateProcess=yes
+LZMANumBlockThreads=4
 
-; صلاحيات التثبيت — يتثبت للمستخدم الحالي بدون حاجة admin
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+; ─── الصلاحيات: Admin إجباري ─────────────────────────────────
+;   - يفتح UAC مرة واحدة عند التثبيت فقط
+;   - يثبت في Program Files بشكل صحيح
+;   - يسجل في HKLM (للكل) بدلاً من HKCU (للمستخدم فقط)
+PrivilegesRequired=admin
 
-; إعدادات الشاشة
+; ─── إعدادات الشاشة ──────────────────────────────────────────
 WizardStyle=modern
 WizardSizePercent=120
-WizardResizable=yes
+WizardResizable=no
+DisableWelcomePage=no
+DisableDirPage=no
+DisableReadyPage=no
 
-; اللغة والترميز
-; Windows Arabic support
-ShowLanguageDialog=no
+; ─── لا تحتاج restart بعد التثبيت ────────────────────────────
+AlwaysRestart=no
+RestartIfNeededByRun=no
 
-; يحتاج Windows 10 أو أحدث
-MinVersion=10.0
+; ─── Windows 10 (1809) فأكثر ─────────────────────────────────
+MinVersion=10.0.17763
+
+; ─── معلومات Add/Remove Programs ─────────────────────────────
+AppContact=abdelhamedrefat@gmail.com
+VersionInfoVersion={#AppVersion}
+VersionInfoCompany={#AppPublisher}
+VersionInfoDescription={#AppName}
 
 [Languages]
-Name: "arabic"; MessagesFile: "compiler:Default.isl"; LanguageName: Arabic
-Name: "english"; MessagesFile: "compiler:Default.isl"; LanguageName: English
+Name: "arabic";  MessagesFile: "compiler:Default.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "إنشاء أيقونة على سطح المكتب"; GroupDescription: "أيقونات إضافية:"; Flags: unchecked
-Name: "startuprun";  Description: "تشغيل البرنامج عند بدء تشغيل ويندوز"; GroupDescription: "خيارات التشغيل:"; Flags: unchecked
+Name: "desktopicon"; Description: "إنشاء أيقونة على سطح المكتب";    GroupDescription: "أيقونات إضافية:"; Flags: checkedonce
+Name: "startuprun";  Description: "تشغيل البرنامج عند بدء ويندوز";  GroupDescription: "خيارات التشغيل:"; Flags: unchecked
 
 [Files]
-; ─── الملف التنفيذي الرئيسي ───────────────────────────────
-Source: "{#AppBuildDir}\{#AppExeName}";     DestDir: "{app}"; Flags: ignoreversion
+; ─── VC++ Redistributable (يُحمَّل في الـ workflow تلقائياً) ──
+Source: "{#VCRedistFile}"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsVCRedist
 
-; ─── مكتبات Flutter الأساسية ──────────────────────────────
-Source: "{#AppBuildDir}\flutter_windows.dll";  DestDir: "{app}"; Flags: ignoreversion
-Source: "{#AppBuildDir}\*.dll";                DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+; ─── الملف التنفيذي الرئيسي ───────────────────────────────────
+Source: "{#AppBuildDir}\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
-; ─── ملفات الـ Assets ─────────────────────────────────────
-Source: "{#AppBuildDir}\data\*";               DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
+; ─── جميع الـ DLLs (Flutter + مكتبات) ────────────────────────
+Source: "{#AppBuildDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+
+; ─── ملفات الـ Assets والـ Data ───────────────────────────────
+Source: "{#AppBuildDir}\data\*"; DestDir: "{app}\data"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Dirs]
+; إنشاء مجلد البيانات مع صلاحيات كتابة كاملة لجميع المستخدمين
+Name: "{commonappdata}\{#AppNameEn}";        Permissions: everyone-full
+Name: "{commonappdata}\{#AppNameEn}\data";   Permissions: everyone-full
+Name: "{commonappdata}\{#AppNameEn}\backup"; Permissions: everyone-full
+Name: "{app}";                               Permissions: everyone-full
 
 [Icons]
 ; أيقونة قائمة ابدأ
-Name: "{group}\{#AppName}";           Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\{#AppExeName}"
+Name: "{group}\{#AppName}";              Filename: "{app}\{#AppExeName}"
 Name: "{group}\إلغاء تثبيت {#AppName}"; Filename: "{uninstallexe}"
-
-; أيقونة سطح المكتب (اختيارية)
-Name: "{autodesktop}\{#AppName}";     Filename: "{app}\{#AppExeName}"; IconFilename: "{app}\{#AppExeName}"; Tasks: desktopicon
+; أيقونة سطح المكتب
+Name: "{autodesktop}\{#AppName}";        Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Registry]
-; تسجيل التطبيق في ويندوز
-Root: HKCU; Subkey: "Software\{#AppPublisher}\{#AppNameEn}"; ValueType: string; ValueName: "InstallPath"; ValueData: "{app}"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\{#AppPublisher}\{#AppNameEn}"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"; Flags: uninsdeletevalue
+; ─── تسجيل التطبيق في HKLM (لكل المستخدمين) ─────────────────
+Root: HKLM; Subkey: "Software\{#AppPublisher}\{#AppNameEn}"; ValueType: string; ValueName: "InstallPath"; ValueData: "{app}";                           Flags: uninsdeletekey
+Root: HKLM; Subkey: "Software\{#AppPublisher}\{#AppNameEn}"; ValueType: string; ValueName: "Version";     ValueData: "{#AppVersion}";                   Flags: uninsdeletevalue
+Root: HKLM; Subkey: "Software\{#AppPublisher}\{#AppNameEn}"; ValueType: string; ValueName: "DataPath";    ValueData: "{commonappdata}\{#AppNameEn}";    Flags: uninsdeletevalue
 
-; تشغيل عند الإقلاع (اختياري)
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#AppNameEn}"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue; Tasks: startuprun
+; ─── تشغيل عند الإقلاع لكل المستخدمين (اختياري) ──────────────
+Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#AppNameEn}"; ValueData: """{app}\{#AppExeName}"""; Flags: uninsdeletevalue; Tasks: startuprun
+
+; ─── السماح للتطبيق بالمرور عبر Windows Firewall ────────────
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules"; ValueType: string; ValueName: "{#AppNameEn}-In";  ValueData: "v2.30|Action=Allow|Active=TRUE|Dir=In|Protocol=6|App={app}\{#AppExeName}|Name={#AppName}|";  Flags: uninsdeletevalue
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules"; ValueType: string; ValueName: "{#AppNameEn}-Out"; ValueData: "v2.30|Action=Allow|Active=TRUE|Dir=Out|Protocol=6|App={app}\{#AppExeName}|Name={#AppName}|"; Flags: uninsdeletevalue
 
 [Run]
-; تشغيل البرنامج بعد اكتمال التثبيت
+; ─── تثبيت VC++ أولاً لو محتاج ──────────────────────────────
+Filename: "{tmp}\{#VCRedistFile}"; Parameters: "/quiet /norestart"; StatusMsg: "جاري تثبيت Microsoft Visual C++ Runtime..."; Check: NeedsVCRedist; Flags: waituntilterminated
+
+; ─── تشغيل البرنامج بعد اكتمال التثبيت ──────────────────────
 Filename: "{app}\{#AppExeName}"; Description: "تشغيل {#AppName} الآن"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-; تنظيف عند إلغاء التثبيت
+; إيقاف البرنامج قبل إلغاء التثبيت
 Filename: "taskkill.exe"; Parameters: "/F /IM {#AppExeName}"; Flags: runhidden; RunOnceId: "KillApp"
+
+[UninstallDelete]
+; حذف ملفات اللوج المؤقتة فقط (وليس قاعدة البيانات)
+Type: filesandordirs; Name: "{app}\*.log"
 
 [Code]
 // ─────────────────────────────────────────────────────────────
-// التحقق من متطلبات ويندوز قبل التثبيت
+// فحص إصدار ويندوز قبل التثبيت
 // ─────────────────────────────────────────────────────────────
 function InitializeSetup(): Boolean;
 var
   Version: TWindowsVersion;
 begin
   GetWindowsVersionEx(Version);
-  // نتطلب Windows 10 (Build 10240) أو أحدث
-  if (Version.Major < 10) then
+  if (Version.Major < 10) or ((Version.Major = 10) and (Version.Build < 17763)) then
   begin
-    MsgBox('هذا التطبيق يتطلب Windows 10 أو أحدث.'#13#10'يرجى تحديث نظام التشغيل.', mbError, MB_OK);
+    MsgBox(
+      'هذا التطبيق يتطلب Windows 10 (إصدار 1809) أو أحدث.' + #13#10 +
+      'يرجى تحديث نظام التشغيل ثم إعادة التثبيت.',
+      mbError, MB_OK
+    );
     Result := False;
   end else
     Result := True;
 end;
 
 // ─────────────────────────────────────────────────────────────
-// إغلاق البرنامج إن كان مفتوحًا قبل التحديث
+// فحص إذا كان VC++ 2015-2022 Redistributable x64 مثبتاً
+// إذا كان مثبتاً → تخطي تثبيته (توفير وقت)
+// إذا لم يكن → تثبيته تلقائياً بدون أي تدخل
+// ─────────────────────────────────────────────────────────────
+function NeedsVCRedist(): Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := True;
+  // مسار التسجيل الأساسي لـ VC++ 2015-2022 x64
+  if RegQueryDWordValue(HKLM,
+    'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64',
+    'Installed', Installed) then
+  begin
+    if Installed = 1 then
+    begin
+      Result := False;
+      Exit;
+    end;
+  end;
+  // مسار بديل (على بعض إصدارات ويندوز)
+  if RegQueryDWordValue(HKLM,
+    'SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x64',
+    'Installed', Installed) then
+  begin
+    if Installed = 1 then
+      Result := False;
+  end;
+end;
+
+// ─────────────────────────────────────────────────────────────
+// إغلاق البرنامج إن كان مفتوحاً قبل التحديث
 // ─────────────────────────────────────────────────────────────
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ResultCode: Integer;
 begin
-  // محاولة إغلاق البرنامج إن كان يعمل
   Exec('taskkill.exe', '/F /IM {#AppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  NeedsRestart := False;
   Result := '';
+end;
+
+// ─────────────────────────────────────────────────────────────
+// بعد التثبيت: ضبط صلاحيات مجلد البيانات لجميع المستخدمين
+// ─────────────────────────────────────────────────────────────
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
+  DataPath: string;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    DataPath := ExpandConstant('{commonappdata}\{#AppNameEn}');
+    // S-1-1-0 = Everyone → Full Control (OI)(CI) = للمجلد والمحتوى
+    Exec('icacls.exe',
+      '"' + DataPath + '" /grant *S-1-1-0:(OI)(CI)F /T /Q',
+      '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
 end;
