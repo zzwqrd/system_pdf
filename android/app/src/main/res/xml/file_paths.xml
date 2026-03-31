@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- مسار الملفات المؤقتة (getTemporaryDirectory) - لمشاركة PDF -->
+    <cache-path name="cache" path="." />
+    <!-- مسار الملفات الخارجية -->
+    <external-path name="external_files" path="." />
+    <!-- مسار الملفات الداخلية -->
+    <files-path name="files" path="." />
+</paths>
