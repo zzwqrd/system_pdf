@@ -7,8 +7,6 @@
       <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">True/PM</dpiAware>
       <!-- السماح بمسارات ملفات طويلة بدون قيود -->
       <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
-      <!-- استخدام heap حديث لتحسين الأداء والذاكرة -->
-      <heapType xmlns="http://schemas.microsoft.com/SMI/2020/WindowsSettings">SegmentHeap</heapType>
     </windowsSettings>
   </application>
   <!--
