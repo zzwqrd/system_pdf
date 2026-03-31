@@ -99,6 +99,9 @@ class AppInitializer {
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+
+    // إخفاء شريط الحالة العلوي (status bar) بشكل كامل
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   void handleError(Object error, StackTrace stackTrace) {
