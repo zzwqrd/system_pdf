@@ -10,7 +10,7 @@
 #define AppVersion   "1.0.0"
 #define AppPublisher "Abd Elhamed"
 #define AppExeName   "gym_system.exe"
-#define AppBuildDir  "..\..\..\build\windows\x64\runner\Release"
+#define AppBuildDir  "..\..\build\windows\x64\runner\Release"
 #define AppIconFile  "..\runner\resources\app_icon.ico"
 #define VCRedistFile "VC_redist.x64.exe"
 
